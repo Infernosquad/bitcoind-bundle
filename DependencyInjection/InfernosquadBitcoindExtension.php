@@ -2,16 +2,11 @@
 
 namespace Infernosquad\BitcoindBundle\DependencyInjection;
 
+use Nbobtc\Http\Client;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
-use Symfony\Component\DependencyInjection\Loader;
 
-/**
- * This is the class that loads and manages your bundle configuration.
- *
- * @link http://symfony.com/doc/current/cookbook/bundles/extension.html
- */
 class InfernosquadBitcoindExtension extends Extension
 {
     /**
@@ -22,7 +17,20 @@ class InfernosquadBitcoindExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
-        $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-        $loader->load('services.xml');
+        foreach ($config['clients'] as $name => $client)
+        {
+            $definition = new Definition('Nbobtc\Http\Client',[$client['dsn']]);
+
+            $driver = new $client['driver']['class'];
+
+            foreach ($client['driver']['options'] as $key => $value)
+            {
+                $driver->addCurlOption($key,$value);
+            }
+
+            $definition->setMethodCalls('withDriver',$driver);
+
+            $container->setDefinition(sprintf('infernosquad.bitcoind.%s',$name),$definition);
+        }
     }
 }
