@@ -1,0 +1,15 @@
+{
+    "name": "infernosquad/bitcoind-bundle",
+    "description": "A bundle which provides integration with bitcoind php library",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "infernosquad",
+            "email": "infzanoza@gmail.com"
+        }
+    ],
+    "require": {
+      "nbobtc/bitcoind-php": "~2.0"
+    }
+}
