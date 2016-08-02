@@ -2,9 +2,9 @@
 
 namespace Infernosquad\BitcoindBundle\DependencyInjection;
 
-use Nbobtc\Http\Client;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 class InfernosquadBitcoindExtension extends Extension
@@ -17,20 +17,27 @@ class InfernosquadBitcoindExtension extends Extension
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
 
+        foreach ($config['drivers'] as $name => $driver)
+        {
+            $definition = new Definition($driver['class']);
+
+            foreach ($driver['options'] as $key => $value)
+            {
+                $definition->addMethodCall('addCurlOption',[$key,$value]);
+            }
+
+            $container->setDefinition(sprintf('infernosquad.bitcoind.drivers.%s',$name),$definition);
+        }
+
         foreach ($config['clients'] as $name => $client)
         {
             $definition = new Definition('Nbobtc\Http\Client',[$client['dsn']]);
 
-            $driver = new $client['driver']['class'];
-
-            foreach ($client['driver']['options'] as $key => $value)
-            {
-                $driver->addCurlOption($key,$value);
+            if(isset($client['driver'])){
+                $definition->addMethodCall('withDriver',[new Reference(sprintf('infernosquad.bitcoind.drivers.%s',$client['driver']))]);
             }
 
-            $definition->setMethodCalls('withDriver',$driver);
-
-            $container->setDefinition(sprintf('infernosquad.bitcoind.%s',$name),$definition);
+            $container->setDefinition(sprintf('infernosquad.bitcoind.clients.%s',$name),$definition);
         }
     }
 }
